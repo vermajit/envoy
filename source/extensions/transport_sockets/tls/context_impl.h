@@ -3,6 +3,7 @@
 #include <array>
 #include <deque>
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -96,6 +97,15 @@ protected:
   ContextImpl(Stats::Scope& scope, const Envoy::Ssl::ContextConfig& config,
               TimeSource& time_source);
 
+  // Currently, at most one certificate of a given key type may be specified for each exact
+  // server name or wildcard domain name.
+  using PkeyTypesMap = absl::flat_hash_map<const int, TlsContext*>;
+
+  // Both exact server names and wildcard domains are part of the same map, in which wildcard
+  // domains are prefixed with "." (i.e. ".example.com" for "*.example.com") to differentiate
+  // between exact and wildcard entries.
+  using ServerNamesMap = absl::flat_hash_map<std::string, PkeyTypesMap>;
+
   /**
    * The global SSL-library index used for storing a pointer to the context
    * in the SSL instance, for retrieval in callbacks.
@@ -111,11 +121,14 @@ protected:
   void incCounter(const Stats::StatName name, absl::string_view value,
                   const Stats::StatName fallback) const;
 
+  void populateServerNamesMap(TlsContext& ctx, const int pkey_id);
+
   // This is always non-empty, with the first context used for all new SSL
   // objects. For server contexts, once we have ClientHello, we
   // potentially switch to a different CertificateContext based on certificate
   // selection.
   std::vector<TlsContext> tls_contexts_;
+  ServerNamesMap server_names_map_;
   CertValidatorPtr cert_validator_;
   Stats::Scope& scope_;
   SslStats stats_;
@@ -134,6 +147,7 @@ protected:
   const Stats::StatName ssl_curves_;
   const Stats::StatName ssl_sigalgs_;
   const Ssl::HandshakerCapabilities capabilities_;
+  const CertificateProvider::CertificateProvider::Capabilites cert_provider_caps_;
   const Network::Address::IpList tls_keylog_local_;
   const Network::Address::IpList tls_keylog_remote_;
   AccessLog::AccessLogFileSharedPtr tls_keylog_file_;

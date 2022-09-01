@@ -55,7 +55,10 @@ public:
   Api::Api& api() override { return api_; }
   const Server::Options& options() override { return options_; }
   AccessLog::AccessLogManager& accessLogManager() override { return access_log_manager_; }
-
+  CertificateProvider::CertificateProviderManager& certificateProviderManager() override {
+    return cluster_manager_.clusterManagerFactory().certificateProviderManager();
+  }
+  
 private:
   Server::Admin& admin_;
   Ssl::ContextManager& context_manager_;

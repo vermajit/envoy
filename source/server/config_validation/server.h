@@ -94,6 +94,9 @@ public:
   ServerLifecycleNotifier& lifecycleNotifier() override { return *this; }
   ListenerManager& listenerManager() override { return *listener_manager_; }
   Secret::SecretManager& secretManager() override { return *secret_manager_; }
+  CertificateProvider::CertificateProviderManager& certificateProviderManager() override {
+    return *certificate_provider_manager_;
+  }
   Runtime::Loader& runtime() override {
     if (runtime_singleton_) {
       return runtime_singleton_->instance();
@@ -209,6 +212,7 @@ private:
   // - There may be active clusters referencing it in config_.cluster_manager_.
   // - There may be active connections referencing it.
   std::unique_ptr<Secret::SecretManager> secret_manager_;
+  std::unique_ptr<CertificateProvider::CertificateProviderManager> certificate_provider_manager_;
   const Options& options_;
   ProtobufMessage::ProdValidationContextImpl validation_context_;
   Stats::IsolatedStoreImpl& stats_store_;
